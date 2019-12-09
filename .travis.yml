@@ -4,6 +4,11 @@ branches:
 
 language: cpp
 
+addons:
+  apt:
+    packages:
+      - docker-ce
+
 cache:
   - apt
 
@@ -19,12 +24,29 @@ before_install:
   - eval "${MATRIX_EVAL}"
   # Domoticz needs the full history to be able to calculate the version string
   - git fetch --unshallow
-  # OpenZWave
-  - git clone https://github.com/OpenZWave/open-zwave.git open-zwave-read-only
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew update;
-      brew upgrade boost;
+    brew update;
+    brew upgrade boost;
     fi;
+  # Docker
+  - mkdir ~/.docker && echo '{ "experimental":"enabled" }' > ~/.docker/config.json
+  - docker --version
+
+stages:
+  - name: build_openzwave
+    if: tag IS present OR branch = travis-setup
+  - name: build
+    if: tag IS present OR branch = travis-setup
+  - name: docker
+    if: tag IS present OR branch = travis-setup
+
+jobs:
+  include:
+    - stage: build_openzwave
+      script:
+        - git clone https://github.com/OpenZWave/open-zwave.git open-zwave-read-only
+        - cd open-zwave-read-only
+        - make
 
 # Build matrix definition
 # * Two builds
@@ -32,48 +54,47 @@ before_install:
 #   2. Apple OSX (Disabled until someone wants to correct it)
 matrix:
   include:
-  # Linux x86_64
-  - os: linux
-    dist: xenial
-    sudo: required
-    compiler: gcc
-    env:
-          - TARGET_ARCHITECTURE=x86_64
-          - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
-    addons:
-      apt:
-        sources:
-          - george-edison55-precise-backports  # cmake
-          - ubuntu-toolchain-r-test
-        packages:
-          - gcc-6
-          - g++-6
-          - cmake
-          - cmake-data
-          - libsqlite3-dev
-          - curl
-          - libcurl4-gnutls-dev
-          - libusb-dev
-          - zlib1g-dev
-          - libssl-dev
-          - libudev-dev
-          - git
-          - libdigest-sha-perl
-          - python3-dev
-    script:
-      - curl -sSL https://github.com/Kitware/CMake/releases/download/v3.14.3/cmake-3.14.3-Linux-x86_64.tar.gz -o cmake.tar.gz;
-      - sudo tar xf cmake.tar.gz --strip 1 -C /usr/local;
-      - export PATH=/usr/local/bin:$PATH;
-      - wget https://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.gz >> /dev/null 2>&1
-      - tar xfz boost_1_70_0.tar.gz
-      - cd boost_1_70_0/
-      - ./bootstrap.sh
-      - ./b2 stage threading=multi link=static --with-thread --with-system --with-chrono >> /dev/null 2>&1
-      - sudo ./b2 install threading=multi link=static --with-thread --with-system --with-chrono >> /dev/null 2>&1
-      - cd ..
-      - (cd open-zwave-read-only; make)
-      - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=open-zwave-read-only CMakeLists.txt
-      - make
+    # Linux x86_64
+    - os: linux
+      dist: xenial
+      sudo: required
+      compiler: gcc
+      env:
+        - TARGET_ARCHITECTURE=x86_64
+        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+      addons:
+        apt:
+          sources:
+            - george-edison55-precise-backports # cmake
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - g++-6
+            - cmake
+            - cmake-data
+            - libsqlite3-dev
+            - curl
+            - libcurl4-gnutls-dev
+            - libusb-dev
+            - zlib1g-dev
+            - libssl-dev
+            - libudev-dev
+            - git
+            - libdigest-sha-perl
+            - python3-dev
+      script:
+        - curl -sSL https://github.com/Kitware/CMake/releases/download/v3.14.3/cmake-3.14.3-Linux-x86_64.tar.gz -o cmake.tar.gz;
+        - sudo tar xf cmake.tar.gz --strip 1 -C /usr/local;
+        - export PATH=/usr/local/bin:$PATH;
+        - wget https://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.gz >> /dev/null 2>&1
+        - tar xfz boost_1_70_0.tar.gz
+        - cd boost_1_70_0/
+        - ./bootstrap.sh
+        - ./b2 stage threading=multi link=static --with-thread --with-system --with-chrono >> /dev/null 2>&1
+        - sudo ./b2 install threading=multi link=static --with-thread --with-system --with-chrono >> /dev/null 2>&1
+        - cd ..
+        - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH=open-zwave-read-only CMakeLists.txt
+        - make
   # Apple OSX
   # - os: osx
   #   osx_image: xcode8.3
@@ -101,10 +122,10 @@ before_deploy:
   - shasum -a 256 domoticz_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.tgz > domoticz_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.tgz.sha256sum
   - cp appversion.h.txt version_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.h
   - cp History.txt history_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.txt
-deploy:
-  skip_cleanup: true
-  provider: script
-  script: curl --ftp-ssl -T "{domoticz_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.tgz,domoticz_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.tgz.sha256sum,version_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.h,history_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.txt,History.txt}" -k -u "$FTP_USER:$FTP_PASSWORD" "ftp://$FTP_HOST/beta/"
-  on:
-    branch: development
-    repo: domoticz/domoticz
+# deploy:
+#   skip_cleanup: true
+#   provider: script
+#   script: curl --ftp-ssl -T "{domoticz_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.tgz,domoticz_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.tgz.sha256sum,version_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.h,history_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.txt,History.txt}" -k -u "$FTP_USER:$FTP_PASSWORD" "ftp://$FTP_HOST/beta/"
+#   on:
+#     branch: development
+#     repo: domoticz/domoticz
