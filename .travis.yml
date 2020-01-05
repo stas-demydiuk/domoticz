@@ -21,7 +21,7 @@ matrix:
     services:
       - docker
     script:
-      - chmos +x "docker/travis_build.sh"
+      - chmod +x "docker/travis_build.sh"
       - "docker/travis_build.sh"
   # Linux x86_64
   - os: linux
