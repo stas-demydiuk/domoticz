@@ -14,9 +14,9 @@ setup() {
 
 build_and_push() {
   docker buildx build \
-    --build-arg COMMIT=$(git rev-parse --short HEAD) \
+    # --build-arg COMMIT=$(git rev-parse --short HEAD) \
     --platform linux/arm64/v8,linux/amd64,linux/arm/v6,linux/arm/v7,linux/386 \
-    -f docker/Dockerfile \
+    -f docker/Dockerfile.x86-64 \
     --push \
     $1
     .
