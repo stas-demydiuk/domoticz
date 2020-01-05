@@ -28,22 +28,18 @@ jobs:
       - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
       - sudo apt-get update
       - sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
-    # addons:
-    #   apt:
-    #     packages:
-    #       - docker-ce
+    addons:
+      apt:
+        packages:
+          - qemu-user-static
     env:
       - DOCKER_CLI_EXPERIMENTAL=enabled
       - DOCKER_PLATFORM=linux/arm64/v8,linux/amd64,linux/arm/v6,linux/arm/v7,linux/386
     before_script:
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
       - docker buildx create --use
     script:
-      - docker buildx build --platform $DOCKER_PLATFORM -f docker/Dockerfile.x86-64 -t $DOCKER_USERNAME/domoticz-buildx-test:latest .
-    before_deploy:
-      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-    deploy:
-      provider: script
-      script: docker push $DOCKER_USERNAME/domoticz-buildx-test:latest
+      - docker buildx build --platform $DOCKER_PLATFORM -f docker/Dockerfile.x86-64 --push -t $DOCKER_USERNAME/domoticz-buildx-test:latest .
       # - chmod +x "docker/travis_build.sh"
       # - "docker/travis_build.sh"
   # Linux x86_64
