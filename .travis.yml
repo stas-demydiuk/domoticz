@@ -4,26 +4,13 @@ branches:
 
 language: cpp
 
-addons:
-  apt:
-    packages:
-      - docker-ce
-
-cache:
-  - apt
-
-#update-alternatives:
-#  - install /usr/bin/gcc gcc /usr/bin/gcc-6 50
-#  - install /usr/bin/g++ g++ /usr/bin/g++-6 50
-
-sources:
-  - trusty
-
 # What to install before the build
 before_install:
   - eval "${MATRIX_EVAL}"
   # Domoticz needs the full history to be able to calculate the version string
   - git fetch --unshallow
+  # OpenZWave
+  - git clone https://github.com/OpenZWave/open-zwave.git open-zwave-read-only
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
     brew update;
     brew upgrade boost;
@@ -32,30 +19,15 @@ before_install:
   - mkdir ~/.docker && echo '{ "experimental":"enabled" }' > ~/.docker/config.json
   - docker --version
 
-stages:
-  - name: build_openzwave
-    if: tag IS present OR branch = travis-setup
-  - name: build
-    if: tag IS present OR branch = travis-setup
-  - name: docker
-    if: tag IS present OR branch = travis-setup
-
-jobs:
-  include:
-    - stage: build_openzwave
-      script:
-        - git clone https://github.com/OpenZWave/open-zwave.git open-zwave-read-only
-        - cd open-zwave-read-only
-        - make
-
 # Build matrix definition
 # * Two builds
 #   1. Linux x86_64
 #   2. Apple OSX (Disabled until someone wants to correct it)
-matrix:
+jobs:
   include:
     # Linux x86_64
-    - os: linux
+    - stage: 
+      os: linux
       dist: xenial
       sudo: required
       compiler: gcc
@@ -82,6 +54,7 @@ matrix:
             - git
             - libdigest-sha-perl
             - python3-dev
+            - docker-ce
       script:
         - curl -sSL https://github.com/Kitware/CMake/releases/download/v3.14.3/cmake-3.14.3-Linux-x86_64.tar.gz -o cmake.tar.gz;
         - sudo tar xf cmake.tar.gz --strip 1 -C /usr/local;
@@ -117,11 +90,11 @@ matrix:
 
 # What to do with the build artifacts
 # - Upload to the Domoticz file server
-before_deploy:
-  - tar czf domoticz_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.tgz domoticz History.txt License.txt domoticz.sh server_cert.pem updatebeta updaterelease www/ scripts/ Config/ dzVents/
-  - shasum -a 256 domoticz_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.tgz > domoticz_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.tgz.sha256sum
-  - cp appversion.h.txt version_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.h
-  - cp History.txt history_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.txt
+# before_deploy:
+#   - tar czf domoticz_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.tgz domoticz History.txt License.txt domoticz.sh server_cert.pem updatebeta updaterelease www/ scripts/ Config/ dzVents/
+#   - shasum -a 256 domoticz_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.tgz > domoticz_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.tgz.sha256sum
+#   - cp appversion.h.txt version_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.h
+#   - cp History.txt history_${TRAVIS_OS_NAME}_${TARGET_ARCHITECTURE}.txt
 # deploy:
 #   skip_cleanup: true
 #   provider: script
