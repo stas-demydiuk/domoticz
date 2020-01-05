@@ -1,0 +1,11 @@
+Dockerfile*
+docker-compose*
+.vscode
+.idea
+.github
+.dockerignore
+.env
+docker
+lua
+MQTT
+sqlite

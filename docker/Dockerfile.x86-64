@@ -1,0 +1,83 @@
+FROM alpine:3.11
+
+RUN apk add --no-cache \
+		git \
+		build-base cmake \
+		boost-dev \
+		boost-thread \
+		boost-system \
+		boost-date_time \
+		boost-static \
+		python3-dev \
+		openzwave-dev \
+		sqlite-dev \
+		curl-dev \
+		libssl1.1 libressl-dev \
+		libusb-dev \
+		libusb-compat-dev \
+		lua5.3-dev \
+		minizip-dev \
+		mosquitto-dev \
+		coreutils \
+		zlib zlib-dev \
+		udev eudev-dev \
+		linux-headers
+
+# Build OpenZwave
+# RUN	git clone --depth 2 https://github.com/OpenZWave/open-zwave.git /src/open-zwave && \
+# 	ln -s /src/open-zwave /src/open-zwave-read-only && \
+# 	cd /src/open-zwave && \
+# 	make
+
+COPY . /src/domoticz
+
+# Build Domoticz
+RUN cd /src/domoticz && \
+	cmake \
+	 	-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/opt/domoticz \
+		-DUSE_BUILTIN_LUA=OFF \
+		-DUSE_BUILTIN_MINIZIP=OFF \
+		-DUSE_BUILTIN_MQTT=OFF \
+		-DUSE_BUILTIN_SQLITE=OFF \
+		-DUSE_BUILTIN_ZLIB=OFF \
+		-DUSE_OPENSSL_STATIC=OFF \
+		-DUSE_STATIC_OPENZWAVE=OFF \
+		-Wno-dev && \
+	make && \
+	make install
+
+
+FROM alpine:3.11
+
+ARG COMMIT
+
+LABEL org.label-schema.vcs-ref=$COMMIT \
+      org.label-schema.vcs-url="https://github.com/domoticz/domoticz" \
+      org.label-schema.url="https://domoticz.com/" \
+      org.label-schema.name="Domoticz" \
+      org.label-schema.docker.dockerfile="/Dockerfile" \
+      org.label-schema.license="GPLv3"
+
+RUN apk --no-cache add \
+		python3-dev \
+		sqlite-libs \
+		libcurl \
+		libssl1.1 \
+		libusb \
+		libusb-compat \
+		lua5.3-libs \
+		minizip-dev \
+		mosquitto-libs++ \
+		openzwave-libs \
+		zlib \
+		tzdata
+
+VOLUME /config
+WORKDIR /opt/domoticz
+COPY --from=0 /opt/domoticz .
+
+EXPOSE 8080
+
+ENTRYPOINT ["/opt/domoticz/domoticz", "-dbase", "/config/domoticz.db", "-log", "/config/domoticz.log"]
+CMD ["-www", "8080"]
