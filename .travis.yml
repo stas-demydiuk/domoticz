@@ -20,6 +20,10 @@ matrix:
     sudo: required
     services:
       - docker
+    addons:
+      apt:
+        packages:
+          - docker-ce
     script:
       - chmod +x "docker/travis_build.sh"
       - "docker/travis_build.sh"

@@ -6,9 +6,6 @@ login() {
 
 setup() {
   echo '{\"experimental\": true}' | sudo tee /etc/docker/daemon.json
-  sudo apt update -y
-  sudo apt install --only-upgrade docker-ce -y
-  sudo service docker restart
   docker --version
   mkdir -p ~/.docker/cli-plugins
   wget -O ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
