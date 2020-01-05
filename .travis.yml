@@ -10,7 +10,6 @@ before_install:
   # Domoticz needs the full history to be able to calculate the version string
   - git fetch --unshallow
   # OpenZWave
-  - git clone https://github.com/OpenZWave/open-zwave.git open-zwave-read-only
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
     brew update;
     brew upgrade boost;
@@ -26,9 +25,18 @@ before_install:
 jobs:
   include:
     # Linux x86_64
-    - stage: 
+    - stage: openzwave
       os: linux
-      dist: xenial
+      dist: bionic
+      sudo: required
+      compiler: gcc
+      script:
+      - git clone --depth 2 https://github.com/OpenZWave/open-zwave.git open-zwave-read-only
+      - cd open-zwave-read-only
+      - make
+    - stage: domoticz
+      os: linux
+      dist: bionic
       sudo: required
       compiler: gcc
       env:
