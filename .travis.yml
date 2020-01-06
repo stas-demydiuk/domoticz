@@ -17,7 +17,7 @@ before_install:
 jobs:
   include:
   # Docker
-  - name: "Build docker images"
+  - name: "Build docker AMD64 images"
     os: linux
     dist: bionic
     sudo: required
@@ -42,7 +42,7 @@ jobs:
       - docker buildx create --use
       - docker buildx ls
       - docker buildx build --platform $DOCKER_PLATFORM -f docker/Dockerfile.x86-64 --push -t $DOCKER_USERNAME/domoticz-buildx-test:latest .
-  - name: "Build docker ARM64 images"
+  - name: "Build docker ARM64 image"
     os: linux
     dist: bionic
     arch: arm64
@@ -54,7 +54,7 @@ jobs:
     before_script:
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
     script:
-      - docker -f docker/Dockerfile.x86-64 --push -t $DOCKER_USERNAME/domoticz-buildx-test:latest .
+      - docker build -f docker/Dockerfile.x86-64 --push -t $DOCKER_USERNAME/domoticz-buildx-test:latest .
       # - chmod +x "docker/travis_build.sh"
       # - "docker/travis_build.sh"
   # Linux x86_64
