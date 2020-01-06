@@ -51,10 +51,12 @@ jobs:
       - docker
     env:
       - DOCKER_CLI_EXPERIMENTAL=enabled
+      - DOCKER_IMAGENAME=domoticz-buildx-test
     before_script:
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
     script:
-      - docker build -f docker/Dockerfile.x86-64 --push -t $DOCKER_USERNAME/domoticz-buildx-test:latest .
+      - docker build -f docker/Dockerfile.x86-64 -t $DOCKER_USERNAME/$DOCKER_IMAGENAME:latest .
+      - docker push $DOCKER_USERNAME/$DOCKER_IMAGENAME:latest
       # - chmod +x "docker/travis_build.sh"
       # - "docker/travis_build.sh"
   # Linux x86_64
