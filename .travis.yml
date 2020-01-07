@@ -34,29 +34,30 @@ jobs:
 #          - qemu-user-static
     env:
       - DOCKER_CLI_EXPERIMENTAL=enabled
-      - DOCKER_PLATFORM=linux/amd64
+      - DOCKER_PLATFORM=linux/arm/v7
     before_script:
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
     script:
       - docker run --rm --privileged multiarch/qemu-user-static:register
+      - docker run --rm --privileged docker/binfmt:66f9012c56a8316f9244ffd7622d7c21c1f6f28d
       - docker buildx create --use
       - docker buildx ls
       - docker buildx build --platform $DOCKER_PLATFORM -f docker/Dockerfile.x86-64 --push -t $DOCKER_USERNAME/domoticz-buildx-test:latest .
-  - name: "Build docker ARM64 image"
-    os: linux
-    dist: bionic
-    arch: arm64
-    sudo: required
-    services:
-      - docker
-    env:
-      - DOCKER_CLI_EXPERIMENTAL=enabled
-      - DOCKER_IMAGENAME=domoticz-buildx-test
-    before_script:
-      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-    script:
-      - docker build -f docker/Dockerfile.x86-64 -t $DOCKER_USERNAME/$DOCKER_IMAGENAME:latest .
-      - docker push $DOCKER_USERNAME/$DOCKER_IMAGENAME:latest
+#  - name: "Build docker ARM64 image"
+#    os: linux
+#    dist: bionic
+#    arch: arm64
+#    sudo: required
+#    services:
+#      - docker
+#    env:
+#      - DOCKER_CLI_EXPERIMENTAL=enabled
+#      - DOCKER_IMAGENAME=domoticz-buildx-test
+#    before_script:
+#      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+#    script:
+#      - docker build -f docker/Dockerfile.x86-64 -t $DOCKER_USERNAME/$DOCKER_IMAGENAME:latest .
+#      - docker push $DOCKER_USERNAME/$DOCKER_IMAGENAME:latest
       # - chmod +x "docker/travis_build.sh"
       # - "docker/travis_build.sh"
   # Linux x86_64
